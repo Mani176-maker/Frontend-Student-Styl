@@ -1,57 +1,94 @@
-<script>
-const BASE_URL = "https://student-style.onrender.com";
-let currentPrices = { bw: 1.5, color: 10, spiral: 20 }; // fallback defaults
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Student Style - Print Service</title>
+</head>
+<body>
+  <h1>Student Style Print Order</h1>
 
-// Load prices from backend when page loads
-window.addEventListener("DOMContentLoaded", () => {
-  fetch(`${BASE_URL}/admin/prices`, {
-    headers:{ Authorization: "Bearer admin-token" } // for demo; replace with secure flow if needed
-  })
-  .then(r=>r.json())
-  .then(p => currentPrices = p)
-  .catch(()=>console.log("Using default prices"));
-});
+  <form onsubmit="event.preventDefault(); pay();">
+    <label>Name: <input type="text" id="name" required></label><br><br>
+    <label>Phone: <input type="text" id="phone" required></label><br><br>
+    <label>Pages: <input type="number" id="pages" oninput="calculateAmount()" required></label><br><br>
 
-// Calculate amount dynamically
-function calculateAmount(){
-  let pages = parseInt(document.getElementById("pages").value || "0");
-  let printType = document.getElementById("printType").value;
-  let bindingType = document.getElementById("bindingType").value;
+    <label>Print Type:
+      <select id="printType" onchange="calculateAmount()">
+        <option value="bw">Black & White</option>
+        <option value="color">Color</option>
+      </select>
+    </label><br><br>
 
-  let amount = 0;
-  if(printType === "bw") amount += pages * currentPrices.bw;
-  if(printType === "color") amount += pages * currentPrices.color;
-  if(bindingType === "spiral") amount += currentPrices.spiral;
+    <label>Binding Type:
+      <select id="bindingType" onchange="calculateAmount()">
+        <option value="">None</option>
+        <option value="spiral">Spiral</option>
+      </select>
+    </label><br><br>
 
-  document.getElementById("amount").value = amount.toFixed(2);
-}
+    <label>Amount: <input type="text" id="amount" readonly></label><br><br>
 
-// Payment flow
-function pay(){
-  const form = new FormData();
-  [...files.files].forEach(f=>form.append("files",f));
+    <label>Files: <input type="file" id="files" multiple required></label><br><br>
 
-  form.append("service","print");
-  form.append("name",name.value);
-  form.append("phone",phone.value);
-  form.append("printType",printType.value);
-  form.append("bindingType",bindingType.value);
-  form.append("amount",amount.value);
+    <button type="submit">Pay & Submit</button>
+  </form>
 
-  fetch(`${BASE_URL}/order`, {
-    method:"POST",
-    body:form
-  })
-  .then(r=>r.json())
-  .then(d=>{
-    const rzp = new Razorpay({
-      key: d.key,
-      amount: d.amount * 100,  // Razorpay expects paise
-      currency: "INR",
-      order_id: d.orderId,
-      handler: () => alert("Payment successful! Order placed.")
+  <script>
+    const BASE_URL = "https://student-style.onrender.com";
+    let currentPrices = { bw: 1.5, color: 10, spiral: 20 }; // fallback defaults
+
+    // Load prices from backend when page loads
+    window.addEventListener("DOMContentLoaded", () => {
+      fetch(`${BASE_URL}/admin/prices`, {
+        headers:{ Authorization: "Bearer admin-token" } // demo only; replace with secure flow
+      })
+      .then(r => r.json())
+      .then(p => currentPrices = p)
+      .catch(() => console.log("Using default prices"));
     });
-    rzp.open();
-  });
-}
-</script>
+
+    // Calculate amount dynamically
+    function calculateAmount(){
+      let pages = parseInt(document.getElementById("pages").value || "0");
+      let printType = document.getElementById("printType").value;
+      let bindingType = document.getElementById("bindingType").value;
+
+      let amount = 0;
+      if(printType === "bw") amount += pages * currentPrices.bw;
+      if(printType === "color") amount += pages * currentPrices.color;
+      if(bindingType === "spiral") amount += currentPrices.spiral;
+
+      document.getElementById("amount").value = amount.toFixed(2);
+    }
+
+    // Payment flow
+    function pay(){
+      const form = new FormData();
+      [...files.files].forEach(f => form.append("files", f));
+
+      form.append("service", "print");
+      form.append("name", name.value);
+      form.append("phone", phone.value);
+      form.append("printType", printType.value);
+      form.append("bindingType", bindingType.value);
+      form.append("amount", amount.value);
+
+      fetch(`${BASE_URL}/order`, {
+        method:"POST",
+        body:form
+      })
+      .then(r => r.json())
+      .then(d => {
+        const rzp = new Razorpay({
+          key: d.key,
+          amount: d.amount * 100,  // Razorpay expects paise
+          currency: "INR",
+          order_id: d.orderId,
+          handler: () => alert("Payment successful! Order placed.")
+        });
+        rzp.open();
+      });
+    }
+  </script>
+</body>
+</html>
