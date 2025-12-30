@@ -6,11 +6,11 @@
 <title>Admin Dashboard</title>
 
 <style>
-body{font-family:Arial;background:#f4f6fb;padding:20px}
-.card{background:#fff;padding:15px;border-radius:10px;margin-bottom:15px}
-button{padding:6px 10px}
-.pending{color:orange}
-.done{color:green}
+  body { font-family: Arial; background: #f4f6fb; padding: 20px; }
+  .card { background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
+  button { padding: 6px 10px; }
+  .pending { color: orange; }
+  .done { color: green; }
 </style>
 </head>
 
@@ -34,37 +34,43 @@ button{padding:6px 10px}
 </div>
 
 <script>
-let TOKEN="";
+let TOKEN = "";
 const BASE_URL = "https://student-style.onrender.com";
 
-function login(){
+// Login
+function login() {
   fetch(`${BASE_URL}/admin/login`, {
-    method:"POST",
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({user:user.value, pass:pass.value})
+    method: "POST",
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user: user.value, pass: pass.value })
   })
-  .then(r=>r.json())
-  .then(d=>{
-    TOKEN=d.token;
-    login.style.display="none";
-    panel.style.display="block";
-    loadOrders();
-    loadPrices();
+  .then(r => r.json())
+  .then(d => {
+    if (d.token) {
+      TOKEN = d.token;
+      login.style.display = "none";
+      panel.style.display = "block";
+      loadOrders();
+      loadPrices();
+    } else {
+      alert("Invalid login");
+    }
   });
 }
 
-function loadOrders(){
+// Load Orders
+function loadOrders() {
   fetch(`${BASE_URL}/admin/orders`, {
-    headers:{ Authorization: `Bearer ${TOKEN}` }
+    headers: { Authorization: `Bearer ${TOKEN}` }
   })
-  .then(r=>r.json())
-  .then(list=>{
-    orders.innerHTML=list.map(o=>`
+  .then(r => r.json())
+  .then(list => {
+    orders.innerHTML = list.map(o => `
       <div class="card">
         <b>${o.name}</b> — ₹${o.amount}<br>
         ${o.printType} / ${o.bindingType}<br>
         Status: <span class="${o.status==='pending'?'pending':'done'}">${o.status}</span><br><br>
-        ${o.files.map(f=>`
+        ${o.files.map(f => `
           <a href="${BASE_URL}/uploads/${f}" target="_blank">Download PDF</a>
         `).join("<br>")}
         <br><br>
@@ -74,23 +80,25 @@ function loadOrders(){
   });
 }
 
-function mark(id){
+// Mark order completed
+function mark(id) {
   fetch(`${BASE_URL}/admin/status`, {
-    method:"POST",
-    headers:{
-      'Content-Type':'application/json',
+    method: "POST",
+    headers: {
+      'Content-Type': 'application/json',
       Authorization: `Bearer ${TOKEN}`
     },
-    body:JSON.stringify({id, status:"completed"})
+    body: JSON.stringify({ id, status: "completed" })
   }).then(loadOrders);
 }
 
-function loadPrices(){
+// Load Prices
+function loadPrices() {
   fetch(`${BASE_URL}/admin/prices`, {
-    headers:{ Authorization: `Bearer ${TOKEN}` }
+    headers: { Authorization: `Bearer ${TOKEN}` }
   })
-  .then(r=>r.json())
-  .then(p=>{
+  .then(r => r.json())
+  .then(p => {
     prices.innerHTML = `
       <div class="card">
         <label>Black & White (per page): <input id="bw" value="${p.bw}"></label><br>
@@ -101,7 +109,8 @@ function loadPrices(){
   });
 }
 
-function updatePrices(){
+// Update Prices
+function updatePrices() {
   const newPrices = {
     bw: parseFloat(document.getElementById("bw").value),
     color: parseFloat(document.getElementById("color").value),
@@ -109,14 +118,14 @@ function updatePrices(){
   };
 
   fetch(`${BASE_URL}/admin/prices`, {
-    method:"POST",
-    headers:{
-      'Content-Type':'application/json',
+    method: "POST",
+    headers: {
+      'Content-Type': 'application/json',
       Authorization: `Bearer ${TOKEN}`
     },
-    body:JSON.stringify(newPrices)
+    body: JSON.stringify(newPrices)
   })
-  .then(()=>alert("Prices updated successfully!"));
+  .then(() => alert("Prices updated successfully!"));
 }
 </script>
 
