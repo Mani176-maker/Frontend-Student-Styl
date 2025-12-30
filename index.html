@@ -3,46 +3,115 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Customer Order</title>
+  <title>Student Style Print Order</title>
   <style>
-    body { font-family: Arial; background: #f4f6fb; padding: 20px; }
-    .card { background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
-    button { padding: 8px 12px; margin-top: 10px; }
-    #pageCount, #price { font-weight: bold; margin-top: 10px; }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #cce5ff, #b2f0e9);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .form-container {
+      background: #fff;
+      padding: 30px 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 450px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #333;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 12px;
+      font-weight: 500;
+      color: #444;
+    }
+
+    input[type="text"],
+    input[type="tel"],
+    input[type="file"],
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      margin-top: 6px;
+      margin-bottom: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    #pageCount,
+    #price {
+      font-weight: bold;
+      margin-bottom: 12px;
+      color: #007bff;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
   </style>
 </head>
 <body>
 
-  <h2>Place Your Order</h2>
+  <div class="form-container">
+    <h2>Student Style Print Order</h2>
 
-  <div class="card">
-    <label>Your Name: <input type="text" id="custName" placeholder="Enter your name"></label><br><br>
-    <label>Phone: <input type="text" id="custPhone" placeholder="Enter your phone"></label><br><br>
+    <label>Name:
+      <input type="text" id="custName" placeholder="Enter your name">
+    </label>
 
-    <label>Upload PDF: <input type="file" id="fileInput" accept="application/pdf"></label><br><br>
+    <label>Phone:
+      <input type="tel" id="custPhone" placeholder="Enter your phone">
+    </label>
+
+    <label>Upload PDF:
+      <input type="file" id="fileInput" accept="application/pdf">
+    </label>
 
     <label>Print Type:
       <select id="printType">
         <option value="bw">Black & White</option>
         <option value="color">Color</option>
       </select>
-    </label><br><br>
+    </label>
 
-    <label>Binding:
+    <label>Binding Type:
       <select id="bindingType">
         <option value="none">None</option>
         <option value="spiral">Spiral</option>
       </select>
-    </label><br><br>
+    </label>
 
-    <div id="pageCount"></div>
-    <div id="price"></div>
+    <div id="pageCount">Pages: 0</div>
+    <div id="price">Total Price: ₹0.00</div>
 
-    <!-- Hidden fields to store calculated values -->
     <input type="hidden" id="hiddenPages">
     <input type="hidden" id="hiddenPrice">
 
-    <button onclick="submitOrder()">Place Order</button>
+    <button onclick="submitOrder()">Pay & Submit</button>
   </div>
 
   <!-- PDF.js CDN -->
@@ -51,8 +120,8 @@
   <script>
     const BASE_URL = "https://student-style.onrender.com";
     let prices = {}; // fetched from backend
+    let pageCount = 0;
 
-    // Load prices from backend (customers cannot edit)
     function loadPrices() {
       fetch(`${BASE_URL}/prices`)
         .then(r => r.json())
@@ -62,7 +131,22 @@
         .catch(err => console.error("Error loading prices:", err));
     }
 
-    // Handle file selection and auto-calculate pages + price
+    function calculatePrice() {
+      const printType = document.getElementById("printType").value;
+      const bindingType = document.getElementById("bindingType").value;
+
+      let total = 0;
+      if (printType === "bw") total += pageCount * prices.bw;
+      if (printType === "color") total += pageCount * prices.color;
+      if (bindingType === "spiral") total += prices.spiral;
+
+      document.getElementById("pageCount").innerText = `Pages: ${pageCount}`;
+      document.getElementById("price").innerText = `Total Price: ₹${total.toFixed(2)}`;
+
+      document.getElementById("hiddenPages").value = pageCount;
+      document.getElementById("hiddenPrice").value = total.toFixed(2);
+    }
+
     document.getElementById("fileInput").addEventListener("change", async function(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -72,22 +156,8 @@
         try {
           const typedarray = new Uint8Array(this.result);
           const pdf = await pdfjsLib.getDocument(typedarray).promise;
-          const pageCount = pdf.numPages;
-
-          const printType = document.getElementById("printType").value;
-          const bindingType = document.getElementById("bindingType").value;
-
-          let total = 0;
-          if (printType === "bw") total += pageCount * prices.bw;
-          if (printType === "color") total += pageCount * prices.color;
-          if (bindingType === "spiral") total += prices.spiral;
-
-          document.getElementById("pageCount").innerText = `Pages: ${pageCount}`;
-          document.getElementById("price").innerText = `Total Price: ₹${total}`;
-
-          document.getElementById("hiddenPages").value = pageCount;
-          document.getElementById("hiddenPrice").value = total;
-
+          pageCount = pdf.numPages;
+          calculatePrice();
         } catch (err) {
           console.error("Error reading PDF:", err);
           alert("Could not read PDF file. Please upload a valid PDF.");
@@ -96,7 +166,9 @@
       reader.readAsArrayBuffer(file);
     });
 
-    // Submit order
+    document.getElementById("printType").addEventListener("change", calculatePrice);
+    document.getElementById("bindingType").addEventListener("change", calculatePrice);
+
     function submitOrder() {
       const name = document.getElementById("custName").value;
       const phone = document.getElementById("custPhone").value;
@@ -134,7 +206,6 @@
         });
     }
 
-    // Load prices on page load
     loadPrices();
   </script>
 
