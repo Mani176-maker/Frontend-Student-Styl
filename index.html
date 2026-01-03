@@ -7,16 +7,13 @@
   <!-- PDF.js for page counting -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
   <script>
-    // Required for reliable PDF.js operation
     pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
   </script>
 
   <!-- Razorpay checkout -->
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
-  <!-- Compact white form, green accents, animated gradient background only -->
   <style>
-    /* Animated gradient background (app stays white) */
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
@@ -28,24 +25,18 @@
       align-items: center;
       min-height: 100vh;
     }
-
-    /* Compact, static white app */
     form {
       background: #ffffff;
       border-radius: 12px;
       padding: 20px;
-      width: 300px; /* compact so all inputs are visible without scrolling */
+      width: 300px;
       box-shadow: 0 6px 20px rgba(0,0,0,0.1);
     }
-
-    /* Labels with tick green */
     label {
       font-weight: bold;
       color: #2e7d32;
       font-size: 13px;
     }
-
-    /* Inputs and selects */
     input, select {
       width: 100%;
       padding: 8px;
@@ -62,8 +53,6 @@
       border-color: #2e7d32;
       box-shadow: 0 0 6px rgba(46,125,50,0.6);
     }
-
-    /* Button */
     button {
       width: 100%;
       background: linear-gradient(90deg, #43cea2, #2e7d32);
@@ -76,15 +65,8 @@
       font-size: 14px;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-    button:hover {
-      transform: scale(1.05);
-      box-shadow: 0 4px 12px rgba(46,125,50,0.4);
-    }
-    button:active {
-      transform: scale(0.95);
-    }
-
-    /* Animated background keyframes */
+    button:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(46,125,50,0.4); }
+    button:active { transform: scale(0.95); }
     @keyframes gradientBG {
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
@@ -127,10 +109,9 @@
   <script>
     (function() {
       const BASE_URL = "https://student-style.onrender.com";
-      let currentPrices = { bw: 1.5, color: 10, spiral: 20 }; // fallback defaults
+      let currentPrices = { bw: 1.5, color: 10, spiral: 20 };
 
       document.addEventListener("DOMContentLoaded", () => {
-        // Elements
         const nameEl = document.getElementById("name");
         const phoneEl = document.getElementById("phone");
         const filesEl = document.getElementById("files");
@@ -140,25 +121,20 @@
         const amountEl = document.getElementById("amount");
         const payBtn = document.getElementById("payBtn");
 
-        // Load prices from backend (non-blocking; fallback used if fails)
-        fetch(`${BASE_URL}/admin/prices`, {
-          headers: { Authorization: "Bearer admin-token" } // replace with secure auth in production
-        })
-        .then(r => r.ok ? r.json() : Promise.reject(new Error("Prices fetch failed")))
-        .then(p => { currentPrices = p; })
-        .catch(() => { /* keep fallback prices */ });
+        // Load prices from backend
+        fetch(`${BASE_URL}/admin/prices`)
+          .then(r => r.ok ? r.json() : Promise.reject(new Error("Prices fetch failed")))
+          .then(p => { currentPrices = p; })
+          .catch(() => {});
 
-        // Bind events
         filesEl.addEventListener("change", handleFilesChange);
         printEl.addEventListener("change", calculateAmount);
         bindEl.addEventListener("change", calculateAmount);
         payBtn.addEventListener("click", pay);
 
-        // Validations
         function validateName(name) { return /^[A-Za-z\s]{3,}$/.test(name.trim()); }
         function validatePhone(phone) { return /^\d{10}$/.test(phone.trim()); }
 
-        // Multiple PDFs: sum pages and lock pages field
         async function handleFilesChange(e) {
           const files = [...e.target.files];
           let totalPages = 0;
@@ -179,11 +155,9 @@
           }
 
           pagesEl.value = totalPages;
-          pagesEl.readOnly = true;
           calculateAmount();
         }
 
-        // Calculate amount and lock field
         function calculateAmount() {
           const pages = parseInt(pagesEl.value || "0", 10);
           const printType = printEl.value;
@@ -195,17 +169,15 @@
           if (bindingType === "spiral") amount += currentPrices.spiral;
 
           amountEl.value = amount.toFixed(2);
-          amountEl.readOnly = true;
         }
 
-        // Payment flow with strict validation
         function pay() {
           if (!validateName(nameEl.value)) {
-            alert("Please enter a valid name (letters & spaces only, min 3 characters).");
+            alert("Invalid name.");
             return;
           }
           if (!validatePhone(phoneEl.value)) {
-            alert("Please enter a valid 10-digit phone number.");
+            alert("Invalid phone number.");
             return;
           }
           if (!filesEl.files.length) {
@@ -220,29 +192,27 @@
           form.append("phone", phoneEl.value.trim());
           form.append("printType", printEl.value);
           form.append("bindingType", bindEl.value);
+          form.append("pages", pagesEl.value);
           form.append("amount", amountEl.value);
 
-          fetch(`${BASE_URL}/order`, {
-            method: "POST",
-            body: form
-          })
-          .then(r => r.ok ? r.json() : Promise.reject(new Error("Order creation failed")))
-          .then(d => {
-            const rzp = new Razorpay({
-              key: d.key,
-              amount: d.amount * 100,  // paise
-              currency: "INR",
-              order_id: d.orderId,
-              handler: function() {
-                alert("✅ Payment successful! Your order has been placed.");
-              }
+          fetch(`${BASE_URL}/order`, { method: "POST", body: form })
+            .then(r => r.ok ? r.json() : Promise.reject(new Error("Order creation failed")))
+            .then(d => {
+              const rzp = new Razorpay({
+                key: d.key,
+                amount: d.amount * 100,
+                currency: "INR",
+                order_id: d.orderId,
+                handler: function() {
+                  alert("✅ Payment successful! Your order has been placed.");
+                }
+              });
+              rzp.open();
+            })
+            .catch(err => {
+              console.error("Order/Payment error:", err);
+              alert("⚠️ Unable to process payment right now.");
             });
-            rzp.open();
-          })
-          .catch(err => {
-            console.error("Order/Payment error:", err);
-            alert("⚠️ Unable to process payment right now. Please try again later.");
-          });
         }
       });
     })();
