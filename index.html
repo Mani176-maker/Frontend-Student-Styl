@@ -2,71 +2,43 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Student Print Service</title>
 
-  <!-- PDF.js for page counting -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
   </script>
 
-  <!-- Razorpay checkout -->
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
   <style>
     body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
+      margin: 0; font-family: 'Segoe UI', sans-serif;
       background: linear-gradient(-45deg, #43cea2, #185a9d, #00c9ff, #92fe9d);
-      background-size: 400% 400%;
-      animation: gradientBG 15s ease infinite;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
+      background-size: 400% 400%; animation: gradientBG 15s ease infinite;
+      display: flex; justify-content: center; align-items: center; min-height: 100vh;
     }
     form {
-      background: #ffffff;
-      border-radius: 12px;
-      padding: 20px;
-      width: 300px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+      background: #ffffff; border-radius: 12px; padding: 25px;
+      width: 320px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
-    label {
-      font-weight: bold;
-      color: #2e7d32;
-      font-size: 13px;
-    }
+    h2 { text-align: center; color: #2e7d32; margin-top: 0; }
+    label { font-weight: bold; color: #333; font-size: 13px; display: block; margin-top: 10px; }
     input, select {
-      width: 100%;
-      padding: 8px;
-      margin-top: 5px;
-      margin-bottom: 12px;
-      border: 1px solid #a5d6a7;
-      border-radius: 6px;
-      outline: none;
-      font-size: 13px;
-      background: #f9f9f9;
-      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      width: 100%; padding: 10px; margin-top: 5px; box-sizing: border-box;
+      border: 1px solid #ddd; border-radius: 6px; font-size: 14px;
     }
-    input:focus, select:focus {
-      border-color: #2e7d32;
-      box-shadow: 0 0 6px rgba(46,125,50,0.6);
+    .file-input-wrapper { margin-bottom: 15px; }
+    #fileList { font-size: 12px; color: #666; margin-bottom: 10px; }
+    .file-item { display: flex; justify-content: space-between; margin-bottom: 5px; }
+    .remove-btn { color: red; cursor: pointer; border: none; background: none; font-size: 11px; }
+    button#payBtn {
+      width: 100%; background: linear-gradient(90deg, #43cea2, #2e7d32);
+      color: #fff; font-weight: bold; cursor: pointer; border: none;
+      border-radius: 6px; padding: 12px; font-size: 15px; margin-top: 15px;
     }
-    button {
-      width: 100%;
-      background: linear-gradient(90deg, #43cea2, #2e7d32);
-      color: #fff;
-      font-weight: bold;
-      cursor: pointer;
-      border: none;
-      border-radius: 6px;
-      padding: 10px;
-      font-size: 14px;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    button:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(46,125,50,0.4); }
-    button:active { transform: scale(0.95); }
+    button#payBtn:disabled { background: #ccc; cursor: not-allowed; }
     @keyframes gradientBG {
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
@@ -74,148 +46,153 @@
     }
   </style>
 </head>
+
 <body>
   <form id="orderForm">
-    <label>Name:</label>
-    <input type="text" id="name" required>
+    <h2>Print My Docs</h2>
+    
+    <label>Name</label>
+    <input type="text" id="name" placeholder="Full Name" required>
 
-    <label>Phone:</label>
-    <input type="text" id="phone" required>
+    <label>Phone</label>
+    <input type="text" id="phone" placeholder="Phone Number" required>
 
-    <label>Upload PDFs:</label>
+    <label>Upload PDFs (Max 5)</label>
     <input type="file" id="files" accept="application/pdf" multiple required>
+    <div id="fileList"></div>
 
-    <label>Pages:</label>
-    <input type="number" id="pages" readonly>
+    <label>Total Pages</label>
+    <input type="number" id="pages" value="0" readonly>
 
-    <label>Print Type:</label>
+    <label>Print Type</label>
     <select id="printType">
-      <option value="bw">Black & White</option>
-      <option value="color">Color</option>
+      <option value="bw">Black & White (₹1.50)</option>
+      <option value="color">Color (₹10.00)</option>
     </select>
 
-    <label>Binding Type:</label>
+    <label>Siding</label>
+    <select id="sideType">
+      <option value="single">Single Sided</option>
+      <option value="double">Double Sided</option>
+    </select>
+
+    <label>Binding</label>
     <select id="bindingType">
-      <option value="none">None</option>
-      <option value="spiral">Spiral</option>
+      <option value="none">No Binding</option>
+      <option value="spiral">Spiral Binding (+₹20)</option>
     </select>
 
-    <label>Amount (INR):</label>
-    <input type="text" id="amount" readonly>
+    <label>Final Amount (INR)</label>
+    <input type="text" id="amount" value="0.00" readonly>
 
-    <button type="button" id="payBtn">Pay & Order</button>
+    <button type="button" id="payBtn">Pay & Order Now</button>
   </form>
 
-  <script>
-    (function() {
-      const BASE_URL = "https://student-style.onrender.com";
-      let currentPrices = { bw: 1.5, color: 10, spiral: 20 };
+<script>
+const BASE_URL = "https://student-print-backend.onrender.com";
+let currentPrices = { bw: 1.5, color: 10, spiral: 20 };
+let selectedFiles = [];
 
-      document.addEventListener("DOMContentLoaded", () => {
-        const nameEl = document.getElementById("name");
-        const phoneEl = document.getElementById("phone");
-        const filesEl = document.getElementById("files");
-        const pagesEl = document.getElementById("pages");
-        const printEl = document.getElementById("printType");
-        const bindEl = document.getElementById("bindingType");
-        const amountEl = document.getElementById("amount");
-        const payBtn = document.getElementById("payBtn");
+const filesEl = document.getElementById("files");
+const pagesEl = document.getElementById("pages");
+const amountEl = document.getElementById("amount");
+const payBtn = document.getElementById("payBtn");
 
-        // Load prices from backend
-        fetch(`${BASE_URL}/admin/prices`)
-          .then(r => r.ok ? r.json() : Promise.reject(new Error("Prices fetch failed")))
-          .then(p => { currentPrices = p; })
-          .catch(() => {});
+filesEl.addEventListener("change", async (e) => {
+  const newFiles = Array.from(e.target.files);
+  if (selectedFiles.length + newFiles.length > 5) {
+    alert("Max 5 files allowed.");
+    return;
+  }
+  selectedFiles = [...selectedFiles, ...newFiles];
+  updateFileList();
+  await updatePages();
+});
 
-        filesEl.addEventListener("change", handleFilesChange);
-        printEl.addEventListener("change", calculateAmount);
-        bindEl.addEventListener("change", calculateAmount);
-        payBtn.addEventListener("click", pay);
+function updateFileList() {
+  const list = document.getElementById("fileList");
+  list.innerHTML = selectedFiles.map((f, i) => `
+    <div class="file-item">
+      <span>${f.name.substring(0, 20)}...</span>
+      <button class="remove-btn" onclick="removeFile(${i})">Remove</button>
+    </div>
+  `).join("");
+}
 
-        function validateName(name) { return /^[A-Za-z\s]{3,}$/.test(name.trim()); }
-        function validatePhone(phone) { return /^\d{10}$/.test(phone.trim()); }
+window.removeFile = (i) => {
+  selectedFiles.splice(i, 1);
+  updateFileList();
+  updatePages();
+};
 
-        async function handleFilesChange(e) {
-          const files = [...e.target.files];
-          let totalPages = 0;
+async function updatePages() {
+  let total = 0;
+  for (const file of selectedFiles) {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+    total += pdf.numPages;
+  }
+  pagesEl.value = total;
+  calculateTotal();
+}
 
-          for (const file of files) {
-            if (file.type !== "application/pdf") {
-              alert("Only PDF files are allowed.");
-              e.target.value = "";
-              return;
-            }
-            const reader = new FileReader();
-            const pdfData = await new Promise(resolve => {
-              reader.onload = () => resolve(new Uint8Array(reader.result));
-              reader.readAsArrayBuffer(file);
-            });
-            const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-            totalPages += pdf.numPages;
-          }
+function calculateTotal() {
+  const pages = parseInt(pagesEl.value) || 0;
+  const printType = document.getElementById("printType").value;
+  const sideType = document.getElementById("sideType").value;
+  const binding = document.getElementById("bindingType").value;
 
-          pagesEl.value = totalPages;
-          calculateAmount();
-        }
+  let sheets = (sideType === "double") ? Math.ceil(pages / 2) : pages;
+  let total = sheets * currentPrices[printType];
+  if (binding === "spiral" && pages > 0) total += currentPrices.spiral;
+  
+  amountEl.value = total.toFixed(2);
+}
 
-        function calculateAmount() {
-          const pages = parseInt(pagesEl.value || "0", 10);
-          const printType = printEl.value;
-          const bindingType = bindEl.value;
+// Watch for changes to recalculate
+document.querySelectorAll('select').forEach(el => el.addEventListener('change', calculateTotal));
 
-          let amount = 0;
-          if (printType === "bw") amount += pages * currentPrices.bw;
-          if (printType === "color") amount += pages * currentPrices.color;
-          if (bindingType === "spiral") amount += currentPrices.spiral;
+payBtn.onclick = async () => {
+  if (selectedFiles.length === 0) return alert("Please upload a file.");
+  if (parseFloat(amountEl.value) <= 0) return alert("Amount must be greater than 0.");
 
-          amountEl.value = amount.toFixed(2);
-        }
+  payBtn.disabled = true;
+  payBtn.innerText = "Connecting to Secure Server...";
 
-        function pay() {
-          if (!validateName(nameEl.value)) {
-            alert("Invalid name.");
-            return;
-          }
-          if (!validatePhone(phoneEl.value)) {
-            alert("Invalid phone number.");
-            return;
-          }
-          if (!filesEl.files.length) {
-            alert("Please upload at least one PDF.");
-            return;
-          }
+  const formData = new FormData();
+  selectedFiles.forEach(f => formData.append("files", f));
+  formData.append("name", document.getElementById("name").value);
+  formData.append("amount", amountEl.value);
 
-          const form = new FormData();
-          [...filesEl.files].forEach(f => form.append("files", f));
-          form.append("service", "print");
-          form.append("name", nameEl.value.trim());
-          form.append("phone", phoneEl.value.trim());
-          form.append("printType", printEl.value);
-          form.append("bindingType", bindEl.value);
-          form.append("pages", pagesEl.value);
-          form.append("amount", amountEl.value);
+  try {
+    const res = await fetch(`${BASE_URL}/order`, { method: "POST", body: formData });
+    const data = await res.json();
 
-          fetch(`${BASE_URL}/order`, { method: "POST", body: form })
-            .then(r => r.ok ? r.json() : Promise.reject(new Error("Order creation failed")))
-            .then(d => {
-              const rzp = new Razorpay({
-                key: d.key,
-                amount: d.amount * 100,
-                currency: "INR",
-                order_id: d.orderId,
-                handler: function() {
-                  alert("✅ Payment successful! Your order has been placed.");
-                }
-              });
-              rzp.open();
-            })
-            .catch(err => {
-              console.error("Order/Payment error:", err);
-              alert("⚠️ Unable to process payment right now.");
-            });
-        }
-      });
-    })();
-  </script>
+    const options = {
+      key: data.key,
+      amount: data.amount * 100,
+      currency: "INR",
+      name: "Student Print Service",
+      description: "Document Printing Order",
+      order_id: data.orderId,
+      handler: function(response) {
+        alert("Payment Successful! Your file is sent to printing.");
+        location.reload();
+      },
+      prefill: { contact: document.getElementById("phone").value, name: document.getElementById("name").value },
+      theme: { color: "#2e7d32" }
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.open();
+  } catch (err) {
+    alert("Error creating order. Is your backend running?");
+    console.error(err);
+  } finally {
+    payBtn.disabled = false;
+    payBtn.innerText = "Pay & Order Now";
+  }
+};
+</script>
 </body>
 </html>
