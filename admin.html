@@ -1,35 +1,54 @@
-const BASE_URL = "https://your-backend-name.onrender.com"; // Change to your actual backend URL
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Style - Admin Panel</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f9; padding: 20px; }
+        .order-card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .view-btn { display: inline-block; padding: 8px 12px; background: #007bff; color: white; text-decoration: none; border-radius: 4px; }
+        h1 { color: #333; }
+    </style>
+</head>
+<body>
+    <h1>Order Management (Google Drive)</h1>
+    <div id="ordersContainer">Loading orders...</div>
 
-async function loadOrders() {
-    try {
-        const response = await fetch(`${BASE_URL}/admin/orders`);
-        const files = await response.json();
-        
-        const container = document.getElementById("ordersContainer");
-        container.innerHTML = ""; // Clear old list
+    <script>
+        const BASE_URL = window.location.origin; // Automatically uses your current Render URL
 
-        if (files.length === 0) {
-            container.innerHTML = "<p>No orders found in Drive.</p>";
-            return;
+        async function loadOrders() {
+            try {
+                const response = await fetch(`${BASE_URL}/admin/orders`);
+                const files = await response.json();
+                
+                const container = document.getElementById("ordersContainer");
+                container.innerHTML = ""; 
+
+                if (!files || files.length === 0) {
+                    container.innerHTML = "<p>No orders found in the Drive folder.</p>";
+                    return;
+                }
+
+                files.forEach(file => {
+                    const date = new Date(file.createdTime).toLocaleString();
+                    const div = document.createElement("div");
+                    div.className = "order-card";
+                    div.innerHTML = `
+                        <p><strong>File Name:</strong> ${file.name}</p>
+                        <p><strong>Date Uploaded:</strong> ${date}</p>
+                        <a href="${file.webViewLink}" target="_blank" class="view-btn">Open PDF</a>
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (err) {
+                console.error("Failed to load orders:", err);
+                document.getElementById("ordersContainer").innerHTML = "<p style='color:red;'>Error loading data. Check server logs.</p>";
+            }
         }
 
-        files.forEach(file => {
-            const date = new Date(file.createdTime).toLocaleString();
-            const div = document.createElement("div");
-            div.className = "order-card";
-            div.innerHTML = `
-                <p><strong>File:</strong> ${file.name}</p>
-                <p><strong>Date:</strong> ${date}</p>
-                <a href="${file.webViewLink}" target="_blank" class="view-btn">Open PDF</a>
-                <hr>
-            `;
-            container.appendChild(div);
-        });
-    } catch (err) {
-        console.error("Failed to load orders:", err);
-        alert("Could not load orders. Check console for details.");
-    }
-}
-
-// Load orders when the page opens
-window.onload = loadOrders;
+        window.onload = loadOrders;
+    </script>
+</body>
+</html>
