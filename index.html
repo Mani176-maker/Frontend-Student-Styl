@@ -4,11 +4,16 @@ async function pay() {
   const files = document.getElementById("files").files;
   const amount = document.getElementById("amount").value;
   const printType = document.getElementById("printType").value;
+  const bindingType = document.getElementById("bindingType").value;
 
   if (!name || !phone || files.length === 0) {
     alert("Please fill all details and upload a PDF.");
     return;
   }
+
+  const payBtn = document.getElementById("payBtn");
+  payBtn.innerText = "Uploading..."; // Visual feedback
+  payBtn.disabled = true;
 
   const formData = new FormData();
   formData.append("files", files[0]);
@@ -22,6 +27,8 @@ async function pay() {
       method: "POST",
       body: formData
     });
+    
+    if (!response.ok) throw new Error("Upload failed");
     const d = await response.json();
 
     const rzp = new Razorpay({
@@ -35,16 +42,28 @@ async function pay() {
         const message = `*NEW PRINT ORDER* ✅%0A%0A` +
                         `*Customer:* ${name}%0A` +
                         `*Phone:* ${phone}%0A` +
-                        `*Total:* ₹${amount}%0A%0A` +
+                        `*Amount:* ₹${amount}%0A` +
+                        `*Print:* ${printType}%0A` +
+                        `*Binding:* ${bindingType}%0A%0A` +
                         `*📂 PDF LINK:* ${driveLink}%0A%0A` +
                         `*Payment ID:* ${res.razorpay_payment_id}`;
 
         // Redirect to WhatsApp
         window.open(`https://wa.me/917569008169?text=${message}`, '_blank');
+        payBtn.innerText = "Pay & Order";
+        payBtn.disabled = false;
+      },
+      "modal": {
+        "ondismiss": function(){
+            payBtn.innerText = "Pay & Order";
+            payBtn.disabled = false;
+        }
       }
     });
     rzp.open();
   } catch (err) {
-    alert("Could not start payment. Check your internet or backend.");
+    alert("Error: " + err.message);
+    payBtn.innerText = "Pay & Order";
+    payBtn.disabled = false;
   }
 }
