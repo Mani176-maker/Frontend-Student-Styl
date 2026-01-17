@@ -12,7 +12,10 @@ async function pay() {
   }
 
   const payBtn = document.getElementById("payBtn");
-  payBtn.innerText = "Uploading..."; // Visual feedback
+  const originalText = payBtn.innerText;
+  
+  // Disable button and show status
+  payBtn.innerText = "Uploading PDF...";
   payBtn.disabled = true;
 
   const formData = new FormData();
@@ -28,7 +31,7 @@ async function pay() {
       body: formData
     });
     
-    if (!response.ok) throw new Error("Upload failed");
+    if (!response.ok) throw new Error("Upload failed. Check server logs.");
     const d = await response.json();
 
     const rzp = new Razorpay({
@@ -37,25 +40,25 @@ async function pay() {
       currency: "INR",
       order_id: d.orderId,
       handler: function(res) {
-        // Build the WhatsApp message
+        // Construct the Link and Message for WhatsApp
         const driveLink = `https://drive.google.com/file/d/${d.driveFileId}/view`;
         const message = `*NEW PRINT ORDER* ✅%0A%0A` +
                         `*Customer:* ${name}%0A` +
                         `*Phone:* ${phone}%0A` +
-                        `*Amount:* ₹${amount}%0A` +
-                        `*Print:* ${printType}%0A` +
-                        `*Binding:* ${bindingType}%0A%0A` +
+                        `*Total Paid:* ₹${amount}%0A` +
+                        `*Print Type:* ${printType}%0A%0A` +
                         `*📂 PDF LINK:* ${driveLink}%0A%0A` +
                         `*Payment ID:* ${res.razorpay_payment_id}`;
 
-        // Redirect to WhatsApp
+        // Open WhatsApp to your business number
         window.open(`https://wa.me/917569008169?text=${message}`, '_blank');
-        payBtn.innerText = "Pay & Order";
+        
+        payBtn.innerText = originalText;
         payBtn.disabled = false;
       },
       "modal": {
         "ondismiss": function(){
-            payBtn.innerText = "Pay & Order";
+            payBtn.innerText = originalText;
             payBtn.disabled = false;
         }
       }
@@ -63,7 +66,7 @@ async function pay() {
     rzp.open();
   } catch (err) {
     alert("Error: " + err.message);
-    payBtn.innerText = "Pay & Order";
+    payBtn.innerText = originalText;
     payBtn.disabled = false;
   }
 }
