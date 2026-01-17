@@ -1,45 +1,35 @@
-<script>
-  const BASE_URL = "https://student-style.onrender.com";
-  const ADMIN_PASSWORD = "Mani@176"; 
+const BASE_URL = "https://your-backend-name.onrender.com"; // Change to your actual backend URL
 
-  function checkPassword() {
-    const entered = document.getElementById("passInput").value;
-    if (entered === ADMIN_PASSWORD) {
-      document.getElementById("login-overlay").style.display = "none";
-      document.getElementById("admin-content").style.display = "block";
-      loadOrders();
-      
-      // ✅ ADDED: Auto-refresh every 60 seconds
-      setInterval(loadOrders, 60000); 
-    } else {
-      alert("Incorrect Password!");
-    }
-  }
-
-  function loadOrders() {
-    console.log("Refreshing order list...");
-    fetch(`${BASE_URL}/admin/orders`)
-      .then(res => res.json())
-      .then(data => {
-        const list = document.getElementById("list");
-        list.innerHTML = ""; 
+async function loadOrders() {
+    try {
+        const response = await fetch(`${BASE_URL}/admin/orders`);
+        const files = await response.json();
         
-        if (data.length === 0) {
-          list.innerHTML = '<tr><td colspan="3" style="text-align:center;">No orders yet.</td></tr>';
-          return;
+        const container = document.getElementById("ordersContainer");
+        container.innerHTML = ""; // Clear old list
+
+        if (files.length === 0) {
+            container.innerHTML = "<p>No orders found in Drive.</p>";
+            return;
         }
 
-        data.forEach(file => {
-          const row = `<tr>
-            <td>${new Date(file.createdTime).toLocaleString()}</td>
-            <td><strong>${file.name}</strong></td>
-            <td><a href="${file.webViewLink}" target="_blank" class="btn">Download PDF</a></td>
-          </tr>`;
-          list.innerHTML += row;
+        files.forEach(file => {
+            const date = new Date(file.createdTime).toLocaleString();
+            const div = document.createElement("div");
+            div.className = "order-card";
+            div.innerHTML = `
+                <p><strong>File:</strong> ${file.name}</p>
+                <p><strong>Date:</strong> ${date}</p>
+                <a href="${file.webViewLink}" target="_blank" class="view-btn">Open PDF</a>
+                <hr>
+            `;
+            container.appendChild(div);
         });
-      })
-      .catch(err => console.error("Error loading orders:", err));
-  }
+    } catch (err) {
+        console.error("Failed to load orders:", err);
+        alert("Could not load orders. Check console for details.");
+    }
+}
 
-  function logout() { location.reload(); }
-</script>
+// Load orders when the page opens
+window.onload = loadOrders;
